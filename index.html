@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Clone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .chat-bubble-me {
+            background-color: #dcf8c6;
+            border-radius: 18px 18px 0 18px;
+        }
+        .chat-bubble-other {
+            background-color: #ffffff;
+            border-radius: 18px 18px 18px 0;
+        }
+        .status-online {
+            width: 10px;
+            height: 10px;
+            background-color: #4ade80;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border: 2px solid white;
+        }
+        .status-offline {
+            width: 10px;
+            height: 10px;
+            background-color: #9ca3af;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border: 2px solid white;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- App Container -->
+    <div id="app" class="max-w-screen-md mx-auto bg-white h-screen flex flex-col">
+        <!-- Auth Screens -->
+        <div id="auth-screen" class="flex-1 flex flex-col items-center justify-center p-6">
+            <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8">
+                <div class="text-center mb-8">
+                    <i class="fab fa-whatsapp text-5xl text-green-500 mb-4"></i>
+                    <h1 class="text-2xl font-bold text-gray-800">WhatsApp Clone</h1>
+                    <p class="text-gray-600">Connect with friends and family</p>
+                </div>
+                
+                <div id="register-form" class="space-y-4">
+                    <div>
+                        <label for="register-name" class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                        <input type="text" id="register-name" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label for="register-phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number (6 digits)</label>
+                        <input type="text" id="register-phone" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="123456" maxlength="6">
+                    </div>
+                    <button id="register-btn" class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-200">Register</button>
+                    <p class="text-center text-sm text-gray-600">Already have an account? <button id="show-login-btn" class="text-green-500 font-medium">Login</button></p>
+                </div>
+                
+                <div id="login-form" class="space-y-4 hidden">
+                    <div>
+                        <label for="login-phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <input type="text" id="login-phone" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="123456">
+                    </div>
+                    <button id="login-btn" class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-200">Login</button>
+                    <p class="text-center text-sm text-gray-600">Don't have an account? <button id="show-register-btn" class="text-green-500 font-medium">Register</button></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main App (hidden initially) -->
+        <div id="main-app" class="flex-1 flex flex-col hidden">
+            <!-- Header -->
+            <header class="bg-green-500 text-white p-4 flex justify-between items-center shadow-md">
+                <button id="back-btn" class="hidden">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 id="header-title" class="text-xl font-bold">WhatsApp</h1>
+                <div class="flex items-center space-x-4">
+                    <button id="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button id="menu-btn">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Search Bar (hidden initially) -->
+            <div id="search-bar" class="hidden p-2 bg-white border-b">
+                <div class="flex items-center bg-gray-100 rounded-lg px-3 py-2">
+                    <i class="fas fa-search text-gray-500 mr-2"></i>
+                    <input type="text" placeholder="Search..." class="bg-transparent w-full focus:outline-none">
+                    <button id="close-search-btn" class="text-gray-500">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <main class="flex-1 overflow-hidden flex">
+                <!-- Sidebar -->
+                <div id="sidebar" class="w-full flex flex-col border-r">
+                    <!-- Tabs -->
+                    <div class="flex border-b">
+                        <button class="tab-btn active flex-1 py-3 text-center font-medium" data-tab="chats">
+                            <i class="fas fa-comment-dots mr-1"></i> Chats
+                        </button>
+                        <button class="tab-btn flex-1 py-3 text-center font-medium" data-tab="contacts">
+                            <i class="fas fa-address-book mr-1"></i> Contacts
+                        </button>
+                        <button class="tab-btn flex-1 py-3 text-center font-medium" data-tab="profile">
+                            <i class="fas fa-user mr-1"></i> Profile
+                        </button>
+                    </div>
+                    
+                    <!-- Tab Content -->
+                    <div class="flex-1 overflow-y-auto hide-scrollbar">
+                        <!-- Chats Tab -->
+                        <div id="chats-tab" class="tab-content active">
+                            <!-- Chat List -->
+                            <div id="chat-list" class="divide-y">
+                                <!-- Chat items will be added here dynamically -->
+                            </div>
+                        </div>
+                        
+                        <!-- Contacts Tab -->
+                        <div id="contacts-tab" class="tab-content">
+                            <div class="p-3">
+                                <button id="add-contact-btn" class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-200 mb-4">
+                                    <i class="fas fa-plus mr-2"></i> Add Contact
+                                </button>
+                            </div>
+                            
+                            <!-- Contact List -->
+                            <div id="contact-list" class="divide-y">
+                                <!-- Contact items will be added here dynamically -->
+                            </div>
+                        </div>
+                        
+                        <!-- Profile Tab -->
+                        <div id="profile-tab" class="tab-content p-4">
+                            <div class="flex flex-col items-center mb-6">
+                                <div class="relative mb-4">
+                                    <img id="profile-picture" src="https://via.placeholder.com/150" alt="Profile" class="w-24 h-24 rounded-full object-cover">
+                                    <div id="profile-status" class="status-online"></div>
+                                </div>
+                                <h2 id="profile-name" class="text-xl font-bold">John Doe</h2>
+                                <p id="profile-bio" class="text-gray-600">Hey there! I'm using WhatsApp Clone</p>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <button id="edit-profile-btn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md transition duration-200 text-left">
+                                    <i class="fas fa-user-edit mr-2"></i> Edit Profile
+                                </button>
+                                <button id="logout-btn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md transition duration-200 text-left">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat View (hidden initially) -->
+                <div id="chat-view" class="hidden w-full flex flex-col">
+                    <!-- Chat Header -->
+                    <div class="flex items-center p-3 border-b">
+                        <div class="flex items-center flex-1">
+                            <div class="relative mr-3">
+                                <img id="chat-view-profile-pic" src="https://via.placeholder.com/50" alt="Profile" class="w-10 h-10 rounded-full object-cover">
+                                <div id="chat-view-status" class="status-online"></div>
+                            </div>
+                            <div>
+                                <h3 id="chat-view-name" class="font-medium">Contact Name</h3>
+                                <p id="chat-view-status-text" class="text-xs text-gray-500">online</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-4">
+                            <button>
+                                <i class="fas fa-phone"></i>
+                            </button>
+                            <button>
+                                <i class="fas fa-video"></i>
+                            </button>
+                            <button>
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Messages -->
+                    <div id="messages-container" class="flex-1 overflow-y-auto p-4 bg-gray-100 hide-scrollbar space-y-2">
+                        <!-- Messages will be added here dynamically -->
+                    </div>
+                    
+                    <!-- Message Input -->
+                    <div class="p-3 border-t bg-white">
+                        <div class="flex items-center">
+                            <button class="text-gray-500 mx-2">
+                                <i class="fas fa-paperclip"></i>
+                            </button>
+                            <input type="text" id="message-input" placeholder="Type a message" class="flex-1 border border-gray-300 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <button id="send-message-btn" class="bg-green-500 text-white rounded-full p-2 ml-2">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Add Contact Modal (hidden initially) -->
+                <div id="add-contact-modal" class="hidden absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+                    <div class="bg-white rounded-lg w-full max-w-md mx-4">
+                        <div class="p-4 border-b">
+                            <h3 class="text-lg font-medium">Add New Contact</h3>
+                        </div>
+                        <div class="p-4 space-y-4">
+                            <div>
+                                <label for="contact-name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                <input type="text" id="contact-name" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Contact Name">
+                            </div>
+                            <div>
+                                <label for="contact-phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                <input type="text" id="contact-phone" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="123456" maxlength="6">
+                            </div>
+                        </div>
+                        <div class="p-4 border-t flex justify-end space-x-2">
+                            <button id="cancel-add-contact" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md">Cancel</button>
+                            <button id="save-contact" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Save</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Edit Profile Modal (hidden initially) -->
+                <div id="edit-profile-modal" class="hidden absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+                    <div class="bg-white rounded-lg w-full max-w-md mx-4">
+                        <div class="p-4 border-b">
+                            <h3 class="text-lg font-medium">Edit Profile</h3>
+                        </div>
+                        <div class="p-4 space-y-4">
+                            <div class="flex flex-col items-center">
+                                <div class="relative mb-4">
+                                    <img id="edit-profile-picture" src="https://via.placeholder.com/150" alt="Profile" class="w-24 h-24 rounded-full object-cover">
+                                    <button id="change-profile-pic" class="absolute bottom-0 right-0 bg-green-500 text-white rounded-full p-2">
+                                        <i class="fas fa-camera"></i>
+                                    </button>
+                                </div>
+                                <input type="file" id="profile-pic-input" class="hidden" accept="image/*">
+                            </div>
+                            <div>
+                                <label for="edit-name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                <input type="text" id="edit-name" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                            </div>
+                            <div>
+                                <label for="edit-bio" class="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                                <textarea id="edit-bio" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="p-4 border-t flex justify-end space-x-2">
+                            <button id="cancel-edit-profile" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md">Cancel</button>
+                            <button id="save-profile" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Save</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- View Profile Modal (hidden initially) -->
+                <div id="view-profile-modal" class="hidden absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+                    <div class="bg-white rounded-lg w-full max-w-md mx-4">
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <h3 class="text-lg font-medium">Profile</h3>
+                            <button id="close-view-profile">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex flex-col items-center mb-6">
+                                <div class="relative mb-4">
+                                    <img id="view-profile-picture" src="https://via.placeholder.com/150" alt="Profile" class="w-24 h-24 rounded-full object-cover">
+                                    <div id="view-profile-status" class="status-online"></div>
+                                </div>
+                                <h2 id="view-profile-name" class="text-xl font-bold">John Doe</h2>
+                                <p id="view-profile-bio" class="text-gray-600">Hey there! I'm using WhatsApp Clone</p>
+                            </div>
+                        </div>
+                        <div class="p-4 border-t">
+                            <button id="message-from-profile" class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-200">
+                                <i class="fas fa-comment-dots mr-2"></i> Message
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Backend Simulation
+        class WhatsAppBackend {
+            constructor() {
+                this.users = JSON.parse(localStorage.getItem('whatsappUsers')) || [];
+                this.contacts = JSON.parse(localStorage.getItem('whatsappContacts')) || {};
+                this.chats = JSON.parse(localStorage.getItem('whatsappChats')) || {};
+                this.currentUser = null;
+                this.onlineUsers = {};
+                
+                // Simulate online status changes
+                setInterval(() => {
+                    this.updateOnlineStatus();
+                }, 30000);
+            }
+            
+            register(name, phone) {
+                // Check if phone already exists
+                if (this.users.some(user => user.phone === phone)) {
+                    return { success: false, message: 'Phone number already registered' };
+                }
+                
+                const newUser = {
+                    name,
+                    phone,
+                    bio: 'Hey there! I\'m using WhatsApp Clone',
+                    profilePic: 'https://via.placeholder.com/150',
+                    status: 'online'
+                };
+                
+                this.users.push(newUser);
+                localStorage.setItem('whatsappUsers', JSON.stringify(this.users));
+                
+                // Initialize contacts and chats for new user
+                if (!this.contacts[phone]) {
+                    this.contacts[phone] = [];
+                }
+                
+                if (!this.chats[phone]) {
+                    this.chats[phone] = {};
+                }
+                
+                localStorage.setItem('whatsappContacts', JSON.stringify(this.contacts));
+                localStorage.setItem('whatsappChats', JSON.stringify(this.chats));
+                
+                return { success: true, user: newUser };
+            }
+            
+            login(phone) {
+                const user = this.users.find(user => user.phone === phone);
+                if (!user) {
+                    return { success: false, message: 'Phone number not registered' };
+                }
+                
+                this.currentUser = user;
+                this.onlineUsers[phone] = true;
+                this.updateOnlineStatus();
+                
+                return { success: true, user };
+            }
+            
+            logout() {
+                if (this.currentUser) {
+                    this.onlineUsers[this.currentUser.phone] = false;
+                    this.currentUser = null;
+                }
+            }
+            
+            updateOnlineStatus() {
+                // Randomly set some users as online
+                this.users.forEach(user => {
+                    this.onlineUsers[user.phone] = Math.random() > 0.5;
+                });
+                
+                if (this.currentUser) {
+                    this.onlineUsers[this.currentUser.phone] = true;
+                }
+            }
+            
+            isOnline(phone) {
+                return !!this.onlineUsers[phone];
+            }
+            
+            addContact(userPhone, contactName, contactPhone) {
+                // Check if contact already exists
+                if (this.contacts[userPhone].some(contact => contact.phone === contactPhone)) {
+                    return { success: false, message: 'Contact already exists' };
+                }
+                
+                // Check if contact is a registered user
+                const contactUser = this.users.find(user => user.phone === contactPhone);
+                
+                const newContact = {
+                    name: contactName,
+                    phone: contactPhone,
+                    isUser: !!contactUser,
+                    profilePic: contactUser ? contactUser.profilePic : 'https://via.placeholder.com/150'
+                };
+                
+                this.contacts[userPhone].push(newContact);
+                localStorage.setItem('whatsappContacts', JSON.stringify(this.contacts));
+                
+                return { success: true, contact: newContact };
+            }
+            
+            getContacts(userPhone) {
+                return this.contacts[userPhone] || [];
+            }
+            
+            getUser(phone) {
+                return this.users.find(user => user.phone === phone);
+            }
+            
+            updateProfile(userPhone, name, bio, profilePic) {
+                const user = this.users.find(user => user.phone === userPhone);
+                if (!user) return false;
+                
+                if (name) user.name = name;
+                if (bio) user.bio = bio;
+                if (profilePic) user.profilePic = profilePic;
+                
+                localStorage.setItem('whatsappUsers', JSON.stringify(this.users));
+                
+                // Update in contacts
+                for (const phone in this.contacts) {
+                    this.contacts[phone].forEach(contact => {
+                        if (contact.phone === userPhone && contact.isUser) {
+                            contact.name = user.name;
+                            contact.profilePic = user.profilePic;
+                        }
+                    });
+                }
+                
+                localStorage.setItem('whatsappContacts', JSON.stringify(this.contacts));
+                
+                return true;
+            }
+            
+            sendMessage(senderPhone, receiverPhone, message, isImage = false) {
+                if (!this.chats[senderPhone][receiverPhone]) {
+                    this.chats[senderPhone][receiverPhone] = [];
+                }
+                
+                if (!this.chats[receiverPhone][senderPhone]) {
+                    this.chats[receiverPhone][senderPhone] = [];
+                }
+                
+                const timestamp = new Date().toISOString();
+                const newMessage = {
+                    sender: senderPhone,
+                    content: message,
+                    isImage,
+                    timestamp
+                };
+                
+                this.chats[senderPhone][receiverPhone].push(newMessage);
+                this.chats[receiverPhone][senderPhone].push(newMessage);
+                
+                localStorage.setItem('whatsappChats', JSON.stringify(this.chats));
+                
+                return newMessage;
+            }
+            
+            getChatMessages(userPhone, contactPhone) {
+                return this.chats[userPhone][contactPhone] || [];
+            }
+            
+            getChatList(userPhone) {
+                const chatList = [];
+                
+                // Get all unique contacts from chats
+                const contacts = new Set();
+                if (this.chats[userPhone]) {
+                    Object.keys(this.chats[userPhone]).forEach(contactPhone => {
+                        contacts.add(contactPhone);
+                    });
+                }
+                
+                // Get last message for each contact
+                contacts.forEach(contactPhone => {
+                    const messages = this.chats[userPhone][contactPhone];
+                    if (messages && messages.length > 0) {
+                        const lastMessage = messages[messages.length - 1];
+                        const contact = this.getContactInfo(userPhone, contactPhone);
+                        
+                        chatList.push({
+                            phone: contactPhone,
+                            name: contact ? contact.name : contactPhone,
+                            profilePic: contact ? contact.profilePic : 'https://via.placeholder.com/150',
+                            lastMessage: lastMessage.content,
+                            timestamp: lastMessage.timestamp,
+                            unread: 0 // Not implemented
+                        });
+                    }
+                });
+                
+                // Sort by timestamp
+                chatList.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                return chatList;
+            }
+            
+            getContactInfo(userPhone, contactPhone) {
+                const userContacts = this.contacts[userPhone] || [];
+                const contact = userContacts.find(c => c.phone === contactPhone);
+                
+                if (contact) return contact;
+                
+                // If not in contacts, check if it's a registered user
+                const user = this.users.find(u => u.phone === contactPhone);
+                if (user) {
+                    return {
+                        name: user.name,
+                        phone: user.phone,
+                        isUser: true,
+                        profilePic: user.profilePic
+                    };
+                }
+                
+                return null;
+            }
+        }
+
+        // Frontend App
+        class WhatsAppApp {
+            constructor() {
+                this.backend = new WhatsAppBackend();
+                this.currentView = 'auth';
+                this.currentChat = null;
+                this.currentProfileView = null;
+                
+                this.initElements();
+                this.initEventListeners();
+                this.checkAuth();
+            }
+            
+            initElements() {
+                // Auth Screen
+                this.authScreen = document.getElementById('auth-screen');
+                this.registerForm = document.getElementById('register-form');
+                this.loginForm = document.getElementById('login-form');
+                this.registerBtn = document.getElementById('register-btn');
+                this.loginBtn = document.getElementById('login-btn');
+                this.showLoginBtn = document.getElementById('show-login-btn');
+                this.showRegisterBtn = document.getElementById('show-register-btn');
+                this.registerName = document.getElementById('register-name');
+                this.registerPhone = document.getElementById('register-phone');
+                this.loginPhone = document.getElementById('login-phone');
+                
+                // Main App
+                this.mainApp = document.getElementById('main-app');
+                this.backBtn = document.getElementById('back-btn');
+                this.headerTitle = document.getElementById('header-title');
+                this.searchBtn = document.getElementById('search-btn');
+                this.menuBtn = document.getElementById('menu-btn');
+                this.searchBar = document.getElementById('search-bar');
+                this.closeSearchBtn = document.getElementById('close-search-btn');
+                
+                // Sidebar
+                this.sidebar = document.getElementById('sidebar');
+                this.tabBtns = document.querySelectorAll('.tab-btn');
+                this.tabContents = document.querySelectorAll('.tab-content');
+                this.chatList = document.getElementById('chat-list');
+                this.contactList = document.getElementById('contact-list');
+                this.addContactBtn = document.getElementById('add-contact-btn');
+                
+                // Profile
+                this.profileTab = document.getElementById('profile-tab');
+                this.profilePicture = document.getElementById('profile-picture');
+                this.profileStatus = document.getElementById('profile-status');
+                this.profileName = document.getElementById('profile-name');
+                this.profileBio = document.getElementById('profile-bio');
+                this.editProfileBtn = document.getElementById('edit-profile-btn');
+                this.logoutBtn = document.getElementById('logout-btn');
+                
+                // Chat View
+                this.chatView = document.getElementById('chat-view');
+                this.chatViewProfilePic = document.getElementById('chat-view-profile-pic');
+                this.chatViewStatus = document.getElementById('chat-view-status');
+                this.chatViewName = document.getElementById('chat-view-name');
+                this.chatViewStatusText = document.getElementById('chat-view-status-text');
+                this.messagesContainer = document.getElementById('messages-container');
+                this.messageInput = document.getElementById('message-input');
+                this.sendMessageBtn = document.getElementById('send-message-btn');
+                
+                // Modals
+                this.addContactModal = document.getElementById('add-contact-modal');
+                this.contactName = document.getElementById('contact-name');
+                this.contactPhone = document.getElementById('contact-phone');
+                this.cancelAddContact = document.getElementById('cancel-add-contact');
+                this.saveContact = document.getElementById('save-contact');
+                
+                this.editProfileModal = document.getElementById('edit-profile-modal');
+                this.editProfilePicture = document.getElementById('edit-profile-picture');
+                this.changeProfilePic = document.getElementById('change-profile-pic');
+                this.profilePicInput = document.getElementById('profile-pic-input');
+                this.editName = document.getElementById('edit-name');
+                this.editBio = document.getElementById('edit-bio');
+                this.cancelEditProfile = document.getElementById('cancel-edit-profile');
+                this.saveProfile = document.getElementById('save-profile');
+                
+                this.viewProfileModal = document.getElementById('view-profile-modal');
+                this.viewProfilePicture = document.getElementById('view-profile-picture');
+                this.viewProfileStatus = document.getElementById('view-profile-status');
+                this.viewProfileName = document.getElementById('view-profile-name');
+                this.viewProfileBio = document.getElementById('view-profile-bio');
+                this.closeViewProfile = document.getElementById('close-view-profile');
+                this.messageFromProfile = document.getElementById('message-from-profile');
+            }
+            
+            initEventListeners() {
+                // Auth Screen
+                this.showLoginBtn.addEventListener('click', () => this.toggleAuthForms());
+                this.showRegisterBtn.addEventListener('click', () => this.toggleAuthForms());
+                this.registerBtn.addEventListener('click', () => this.handleRegister());
+                this.loginBtn.addEventListener('click', () => this.handleLogin());
+                
+                // Main App Navigation
+                this.backBtn.addEventListener('click', () => this.showSidebar());
+                this.searchBtn.addEventListener('click', () => this.toggleSearch());
+                this.closeSearchBtn.addEventListener('click', () => this.toggleSearch());
+                this.menuBtn.addEventListener('click', () => alert('Menu clicked'));
+                
+                // Tabs
+                this.tabBtns.forEach(btn => {
+                    btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
+                });
+                
+                // Profile
+                this.editProfileBtn.addEventListener('click', () => this.showEditProfile());
+                this.logoutBtn.addEventListener('click', () => this.handleLogout());
+                
+                // Chat
+                this.sendMessageBtn.addEventListener('click', () => this.sendMessage());
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.sendMessage();
+                });
+                
+                // Add Contact
+                this.addContactBtn.addEventListener('click', () => this.showAddContactModal());
+                this.cancelAddContact.addEventListener('click', () => this.hideAddContactModal());
+                this.saveContact.addEventListener('click', () => this.handleAddContact());
+                
+                // Edit Profile
+                this.cancelEditProfile.addEventListener('click', () => this.hideEditProfileModal());
+                this.saveProfile.addEventListener('click', () => this.handleSaveProfile());
+                this.changeProfilePic.addEventListener('click', () => this.profilePicInput.click());
+                this.profilePicInput.addEventListener('change', (e) => this.handleProfilePicChange(e));
+                
+                // View Profile
+                this.closeViewProfile.addEventListener('click', () => this.hideViewProfileModal());
+                this.messageFromProfile.addEventListener('click', () => this.messageFromProfileHandler());
+            }
+            
+            checkAuth() {
+                if (this.backend.currentUser) {
+                    this.showMainApp();
+                    this.loadUserData();
+                }
+            }
+            
+            toggleAuthForms() {
+                this.registerForm.classList.toggle('hidden');
+                this.loginForm.classList.toggle('hidden');
+            }
+            
+            handleRegister() {
+                const name = this.registerName.value.trim();
+                const phone = this.registerPhone.value.trim();
+                
+                if (!name || !phone) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+                
+                if (phone.length !== 6 || !/^\d+$/.test(phone)) {
+                    alert('Phone number must be 6 digits');
+                    return;
+                }
+                
+                const result = this.backend.register(name, phone);
+                if (result.success) {
+                    this.backend.login(phone);
+                    this.showMainApp();
+                    this.loadUserData();
+                } else {
+                    alert(result.message);
+                }
+            }
+            
+            handleLogin() {
+                const phone = this.loginPhone.value.trim();
+                
+                if (!phone) {
+                    alert('Please enter your phone number');
+                    return;
+                }
+                
+                const result = this.backend.login(phone);
+                if (result.success) {
+                    this.showMainApp();
+                    this.loadUserData();
+                } else {
+                    alert(result.message);
+                }
+            }
+            
+            showMainApp() {
+                this.authScreen.classList.add('hidden');
+                this.mainApp.classList.remove('hidden');
+                this.currentView = 'main';
+            }
+            
+            loadUserData() {
+                const user = this.backend.currentUser;
+                
+                // Update profile tab
+                this.profileName.textContent = user.name;
+                this.profileBio.textContent = user.bio;
+                this.profilePicture.src = user.profilePic;
+                this.profileStatus.className = user.status === 'online' ? 'status-online' : 'status-offline';
+                
+                // Load chats
+                this.loadChatList();
+                
+                // Load contacts
+                this.loadContacts();
+            }
+            
+            loadChatList() {
+                const user = this.backend.currentUser;
+                const chats = this.backend.getChatList(user.phone);
+                
+                this.chatList.innerHTML = '';
+                
+                chats.forEach(chat => {
+                    const chatElement = document.createElement('div');
+                    chatElement.className = 'p-3 flex items-center hover:bg-gray-100 cursor-pointer';
+                    chatElement.dataset.phone = chat.phone;
+                    
+                    chatElement.innerHTML = `
+                        <div class="relative mr-3">
+                            <img src="${chat.profilePic}" alt="${chat.name}" class="w-12 h-12 rounded-full object-cover">
+                            <div class="${this.backend.isOnline(chat.phone) ? 'status-online' : 'status-offline'}"></div>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-medium">${chat.name}</h3>
+                            <p class="text-sm text-gray-500 truncate">${chat.lastMessage}</p>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            ${new Date(chat.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </div>
+                    `;
+                    
+                    chatElement.addEventListener('click', () => this.openChat(chat.phone));
+                    this.chatList.appendChild(chatElement);
+                });
+            }
+            
+            loadContacts() {
+                const user = this.backend.currentUser;
+                const contacts = this.backend.getContacts(user.phone);
+                
+                this.contactList.innerHTML = '';
+                
+                contacts.forEach(contact => {
+                    const contactElement = document.createElement('div');
+                    contactElement.className = 'p-3 flex items-center hover:bg-gray-100 cursor-pointer';
+                    contactElement.dataset.phone = contact.phone;
+                    
+                    contactElement.innerHTML = `
+                        <div class="relative mr-3">
+                            <img src="${contact.profilePic}" alt="${contact.name}" class="w-12 h-12 rounded-full object-cover">
+                            ${contact.isUser ? `<div class="${this.backend.isOnline(contact.phone) ? 'status-online' : 'status-offline'}"></div>` : ''}
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-medium">${contact.name}</h3>
+                            <p class="text-sm text-gray-500">${contact.isUser ? 'WhatsApp User' : 'Not on WhatsApp'}</p>
+                        </div>
+                        <button class="text-gray-500">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    `;
+                    
+                    const moreBtn = contactElement.querySelector('button');
+                    moreBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.showContactOptions(contact);
+                    });
+                    
+                    contactElement.addEventListener('click', () => this.showContactProfile(contact));
+                    this.contactList.appendChild(contactElement);
+                });
+            }
+            
+            switchTab(tab) {
+                this.tabBtns.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tab === tab);
+                });
+                
+                this.tabContents.forEach(content => {
+                    content.classList.toggle('active', content.id === `${tab}-tab`);
+                });
+                
+                this.headerTitle.textContent = tab.charAt(0).toUpperCase() + tab.slice(1);
+            }
+            
+            toggleSearch() {
+                this.searchBar.classList.toggle('hidden');
+            }
+            
+            openChat(contactPhone) {
+                this.currentChat = contactPhone;
+                const contact = this.backend.getContactInfo(this.backend.currentUser.phone, contactPhone);
+                
+                // Update chat header
+                this.chatViewName.textContent = contact ? contact.name : contactPhone;
+                this.chatViewProfilePic.src = contact ? contact.profilePic : 'https://via.placeholder.com/150';
+                
+                const isOnline = contact && contact.isUser && this.backend.isOnline(contactPhone);
+                this.chatViewStatus.className = isOnline ? 'status-online' : 'status-offline';
+                this.chatViewStatusText.textContent = isOnline ? 'online' : 'offline';
+                
+                // Load messages
+                this.loadMessages(contactPhone);
+                
+                // Show chat view
+                this.showChatView();
+            }
+            
+            loadMessages(contactPhone) {
+                const user = this.backend.currentUser;
+                const messages = this.backend.getChatMessages(user.phone, contactPhone);
+                
+                this.messagesContainer.innerHTML = '';
+                
+                messages.forEach(message => {
+                    const isMe = message.sender === user.phone;
+                    const contact = this.backend.getContactInfo(user.phone, message.sender);
+                    
+                    const messageElement = document.createElement('div');
+                    messageElement.className = `flex ${isMe ? 'justify-end' : 'justify-start'} fade-in`;
+                    
+                    messageElement.innerHTML = `
+                        <div class="max-w-xs md:max-w-md rounded-lg p-3 ${isMe ? 'chat-bubble-me' : 'chat-bubble-other'} shadow">
+                            ${message.isImage ? 
+                                `<img src="${message.content}" alt="Sent image" class="rounded-lg max-w-full h-auto">` : 
+                                `<p>${message.content}</p>`
+                            }
+                            <p class="text-xs text-gray-500 text-right mt-1">
+                                ${new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </p>
+                        </div>
+                    `;
+                    
+                    this.messagesContainer.appendChild(messageElement);
+                });
+                
+                // Scroll to bottom
+                this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+            }
+            
+            sendMessage() {
+                const message = this.messageInput.value.trim();
+                if (!message || !this.currentChat) return;
+                
+                this.backend.sendMessage(this.backend.currentUser.phone, this.currentChat, message);
+                this.loadMessages(this.currentChat);
+                this.messageInput.value = '';
+                
+                // Update chat list
+                this.loadChatList();
+            }
+            
+            showChatView() {
+                this.sidebar.classList.add('hidden');
+                this.chatView.classList.remove('hidden');
+                this.backBtn.classList.remove('hidden');
+                this.headerTitle.textContent = 'Chat';
+            }
+            
+            showSidebar() {
+                this.sidebar.classList.remove('hidden');
+                this.chatView.classList.add('hidden');
+                this.backBtn.classList.add('hidden');
+                this.headerTitle.textContent = 'WhatsApp';
+                this.currentChat = null;
+                
+                // Update chat list to show new messages
+                this.loadChatList();
+            }
+            
+            showAddContactModal() {
+                this.addContactModal.classList.remove('hidden');
+                this.contactName.value = '';
+                this.contactPhone.value = '';
+            }
+            
+            hideAddContactModal() {
+                this.addContactModal.classList.add('hidden');
+            }
+            
+            handleAddContact() {
+                const name = this.contactName.value.trim();
+                const phone = this.contactPhone.value.trim();
+                
+                if (!name || !phone) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+                
+                if (phone.length !== 6 || !/^\d+$/.test(phone)) {
+                    alert('Phone number must be 6 digits');
+                    return;
+                }
+                
+                if (phone === this.backend.currentUser.phone) {
+                    alert("You can't add yourself as a contact");
+                    return;
+                }
+                
+                const result = this.backend.addContact(
+                    this.backend.currentUser.phone,
+                    name,
+                    phone
+                );
+                
+                if (result.success) {
+                    this.loadContacts();
+                    this.hideAddContactModal();
+                } else {
+                    alert(result.message);
+                }
+            }
+            
+            showEditProfile() {
+                const user = this.backend.currentUser;
+                
+                this.editName.value = user.name;
+                this.editBio.value = user.bio;
+                this.editProfilePicture.src = user.profilePic;
+                
+                this.editProfileModal.classList.remove('hidden');
+            }
+            
+            hideEditProfileModal() {
+                this.editProfileModal.classList.add('hidden');
+            }
+            
+            handleSaveProfile() {
+                const name = this.editName.value.trim();
+                const bio = this.editBio.value.trim();
+                const profilePic = this.editProfilePicture.src;
+                
+                if (!name) {
+                    alert('Name is required');
+                    return;
+                }
+                
+                const success = this.backend.updateProfile(
+                    this.backend.currentUser.phone,
+                    name,
+                    bio,
+                    profilePic
+                );
+                
+                if (success) {
+                    this.loadUserData();
+                    this.hideEditProfileModal();
+                }
+            }
+            
+            handleProfilePicChange(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    this.editProfilePicture.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            showContactProfile(contact) {
+                if (contact.isUser) {
+                    const user = this.backend.getUser(contact.phone);
+                    
+                    this.viewProfileName.textContent = user.name;
+                    this.viewProfileBio.textContent = user.bio;
+                    this.viewProfilePicture.src = user.profilePic;
+                    this.viewProfileStatus.className = this.backend.isOnline(user.phone) ? 'status-online' : 'status-offline';
+                    
+                    this.currentProfileView = user.phone;
+                    this.viewProfileModal.classList.remove('hidden');
+                } else {
+                    alert(`${contact.name} is not a WhatsApp user`);
+                }
+            }
+            
+            hideViewProfileModal() {
+                this.viewProfileModal.classList.add('hidden');
+                this.currentProfileView = null;
+            }
+            
+            messageFromProfileHandler() {
+                if (this.currentProfileView) {
+                    this.openChat(this.currentProfileView);
+                    this.hideViewProfileModal();
+                }
+            }
+            
+            showContactOptions(contact) {
+                // In a real app, this would show a menu with options like:
+                // - View profile
+                // - Message
+                // - Delete contact
+                // - Block
+                alert(`Options for ${contact.name}`);
+            }
+            
+            handleLogout() {
+                this.backend.logout();
+                this.mainApp.classList.add('hidden');
+                this.authScreen.classList.remove('hidden');
+                this.currentView = 'auth';
+                
+                // Reset forms
+                this.loginForm.classList.add('hidden');
+                this.registerForm.classList.remove('hidden');
+                this.registerName.value = '';
+                this.registerPhone.value = '';
+                this.loginPhone.value = '';
+            }
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new WhatsAppApp();
+        });
+    </script>
+</body>
+</html>
